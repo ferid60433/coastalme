@@ -474,3 +474,83 @@ int CSimulation::nRasterizeCoastlineNormalProfile(vector<C2DPoint>* const pVPoin
 
    return RTN_OK;
 }
+
+
+/*==============================================================================================================================
+
+ Checks all coastline-normal profiles for intersection
+
+===============================================================================================================================*/
+int CSimulation::nCheckAllProfilesForIntersection(void)
+{
+   // Do once for every coastline object
+   for (int i = 0; i < static_cast<int>(m_VCoast.size()); i++)
+   {
+      // Do once for every profile except the last
+      for (int j = 0; j < m_VCoast[i].nGetNumProfiles() - 1; j++)
+      {
+         double
+            dIntersectX = 0,
+            dIntersectY = 0;
+         bool bIntersect = bCheckForIntersection(m_VCoast[i].pGetProfile(j)->pVGetPoints(), m_VCoast[i].pGetProfile(j+1)->pVGetPoints(), dIntersectX, dIntersectY);
+
+         if (bIntersect)
+            LogStream << m_ulIter << ": coast = " << i << " profiles = " << j << " and " << j+1 << " INTERSECT at " << dIntersectX << ", " << dIntersectY << endl;
+      }
+   }
+
+   return RTN_OK;
+}
+
+
+/*==============================================================================================================================
+
+ Checks a pair of coastline-normal profiles for intersection. From Andre LeMothe's "Tricks of the Windows Game Programming Gurus" via http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+
+===============================================================================================================================*/
+bool CSimulation::bCheckForIntersection(vector<C2DPoint>* const pVProfile1, vector<C2DPoint>* const pVProfile2, double& dX, double& dY)
+{
+   // Returns true if the lines intersect. If the lines do intersect then the intersection point is returned in dX and dY
+
+   if ((pVProfile1->size() > 2) || (pVProfile2->size() > 2))
+   {
+      LogStream << "ERROR, TOO LONG" << endl;
+      return false;
+   }
+
+   // In external coordinates
+   double
+      dX1 = pVProfile1->at(0).dGetX(),
+      dY1 = pVProfile1->at(0).dGetY(),
+      dX2 = pVProfile1->at(1).dGetX(),
+      dY2 = pVProfile1->at(1).dGetY();
+
+   double
+      dX3 = pVProfile2->at(0).dGetX(),
+      dY3 = pVProfile2->at(0).dGetY(),
+      dX4 = pVProfile2->at(1).dGetX(),
+      dY4 = pVProfile2->at(1).dGetY();
+
+   // Uses Cramer's Rule to solve the equations
+    double
+      dDiffX1 = dX2 - dX1,
+      dDiffY1 = dY2 - dY1,
+      dDiffX2 = dX4 - dX3,
+      dDiffY2 = dY4 - dY3;
+
+    double
+      dS = (-dDiffY1 * (dX1 - dX3) + dDiffX1 * (dY1 - dY3)) / (-dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2),
+      dT = ( dDiffX2 * (dY1 - dY3) - dDiffY2 * (dX1 - dX3)) / (-dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2);
+
+    if (dS >= 0 && dS <= 1 && dT >= 0 && dT <= 1)
+    {
+      // Collision detected
+      dX = dX1 + (dT * dDiffX1);
+      dY = dY1 + (dT * dDiffY1);
+
+      return true;
+    }
+
+    // No collision
+    return false;
+}

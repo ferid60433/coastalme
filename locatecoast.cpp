@@ -52,6 +52,11 @@ int CSimulation::nLocateCoastlineAndProfiles(void)
    if (nRet != RTN_OK)
       return nRet;
 
+   // DFM TEST Check if the profiles intersect
+   nRet = nCheckAllProfilesForIntersection();
+   if (nRet != RTN_OK)
+      return nRet;
+
    // Put normal profiles onto the raster grid, but only if the profile is long enough, and doesn't cross the coastline or hit dry land
    nRet = nAllCoastlineNormalProfilesToGrid();
    if (nRet != RTN_OK)

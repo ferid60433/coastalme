@@ -370,6 +370,8 @@ private:
    int nAssignCoastalLandforms(void);
    int nCreateCoastlineProfiles(void);
    int nAllCoastlineNormalProfilesToGrid(void);
+   int nCheckAllProfilesForIntersection(void);
+   bool bCheckForIntersection(vector<C2DPoint>* const, vector<C2DPoint>* const, double&, double&);
    int nRasterizeCoastlineNormalProfile(vector<C2DPoint>* const, vector<C2DIPoint>*);
    int nRasterizeCliffCollapseProfile(vector<C2DPoint>* const, vector<C2DIPoint>*);
    int nCalcPotentialErosionOnProfile(int const, int const, int const, vector<C2DIPoint>*, vector<C2DPoint>*);
