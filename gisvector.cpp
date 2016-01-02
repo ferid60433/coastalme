@@ -641,6 +641,9 @@ bool CSimulation::bWriteVectorGIS(int const nDataItem, string const* strPlotTitl
                   pOGRFeature->SetField(strFieldValue1.c_str(), m_pRasterGrid->Cell[nX][nY].dGetWaveOrientation());
                   pOGRFeature->SetField(strFieldValue2.c_str(), m_pRasterGrid->Cell[nX][nY].dGetWaveHeight());
 
+                  if (m_pRasterGrid->Cell[nX][nY].dGetWaveHeight() > 3.0001)
+                     LogStream << m_ulIter << ": [" << nX << "][" << nY << "] has wave height = " << m_pRasterGrid->Cell[nX][nY].dGetWaveHeight() << endl;
+
                   // Create the feature in the output layer
                   if (pOGRLayer->CreateFeature(pOGRFeature) != OGRERR_NONE)
                   {

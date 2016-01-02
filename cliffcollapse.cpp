@@ -211,7 +211,7 @@ int CSimulation::nDoCliffCollapse(CCliff* pCliff, double const dNotchDeepen, dou
    // For the layer which contains the notch, remove only part of the sediment depth
    double dNotchLayerTop = m_pRasterGrid->Cell[nX][nY].dCalcLayerElev(nNotchLayer);
    double dNotchLayerThickness = m_pRasterGrid->Cell[nX][nY].pGetLayer(nNotchLayer)->dGetTotalThickness();
-   assert(dNotchLayerThickness > 0);
+//    assert(dNotchLayerThickness > 0);
    double dNotchLayerVertFracRemoved = (dNotchLayerTop - dNotchElev ) / dNotchLayerThickness;
 
    // Now calculate the fraction of the volume which is removed
@@ -366,7 +366,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
          // Remove this volume from the total still to be deposited
          dTotSandToDeposit -= (dVToDepositPerProfile[nAcross] * dSandProp);
          dTotCoarseToDeposit -= (dVToDepositPerProfile[nAcross] * dCoarseProp);
-         assert(bIsNumber(dTotSandToDeposit));
+//          assert(bIsNumber(dTotSandToDeposit));
 //          LogStream << "dTotSandToDeposit NOW = " << dTotSandToDeposit << " dTotCoarseToDeposit NOW = " << dTotCoarseToDeposit << endl;
 
          continue;

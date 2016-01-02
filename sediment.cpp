@@ -94,7 +94,7 @@ void CSedimentLayer::SetNotchFineLost(double const dDepthIn)
 void CSedimentLayer::IncrNotchFineLost(double const dDepthIn)
 {
    m_dNotchFineLost += dDepthIn;
-   assert(m_dNotchFineLost <= m_dFine);
+//    assert(m_dNotchFineLost <= m_dFine);
 }
 
 // Gets the depth equivalent of fine sediment lost by notch incision
@@ -113,7 +113,7 @@ void CSedimentLayer::SetNotchSandLost(double const dDepthIn)
 void CSedimentLayer::IncrNotchSandLost(double const dDepthIn)
 {
    m_dNotchSandLost += dDepthIn;
-   assert(m_dNotchSandLost <= m_dSand);
+//    assert(m_dNotchSandLost <= m_dSand);
 }
 
 // Gets the depth equivalent of sand sediment lost by notch incision
@@ -132,7 +132,7 @@ void CSedimentLayer::SetNotchCoarseLost(double const dDepthIn)
 void CSedimentLayer::IncrNotchCoarseLost(double const dDepthIn)
 {
    m_dNotchCoarseLost += dDepthIn;
-   assert(m_dNotchCoarseLost <= m_dCoarse);
+//    assert(m_dNotchCoarseLost <= m_dCoarse);
 }
 
 // Gets the depth equivalent of coarse sediment lost by notch incision

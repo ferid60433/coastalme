@@ -780,7 +780,7 @@ void CSimulation::ConstructParallelProfile(int const nDistFromProfile, int const
       pPtVExtCRSParProfile->push_back(C2DPoint(dGridXToExtCRSX(nXPar), dGridYToExtCRSY(nYPar)));
 
       // And set the inverse of the distance-from-profile value for this point on the parallel profile, this is used in the weighting function when a cell has more than one erosion value calculated
-      assert(nDistFromProfile > 0);
+//       assert(nDistFromProfile > 0);
       double dWeight = 1.0 / nDistFromProfile;
       m_pRasterGrid->Cell[nXPar][nYPar].SetWeight(dWeight);
    }

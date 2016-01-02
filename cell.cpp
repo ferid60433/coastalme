@@ -383,8 +383,8 @@ void CCell::InitAndCalcSeaDepth(void)
 void CCell::SetWaveHeight(double const dWaveHeight)
 {
    m_dWaveHeight = dWaveHeight;
-   if (m_dWaveHeight != DBL_NODATA)
-      assert(m_dWaveHeight >= 0);
+//    if (m_dWaveHeight != DBL_NODATA)
+//       assert(m_dWaveHeight >= 0);
 }
 
 double CCell::dGetWaveHeight(void) const

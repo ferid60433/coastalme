@@ -219,7 +219,7 @@ void CSimulation::CalcWaveProperties(int const nCoast, int const nCoastSize, int
          double dKr = sqrt(cos((PI / 180) * dAlpha_0) / cos((PI / 180) * dAlpha));        // Refraction coefficient
          dWaveHeight = m_dOffshoreWaveHeight * dKs * dKr;                                 // Calculate wave height
 
-         assert(dWaveHeight >= 0);
+//          assert(dWaveHeight >= 0);
 
          // Now see if the wave breaks
          if (dWaveHeight > (dWaterDepth * ACTIVE_ZONE_RATIO))
@@ -252,7 +252,7 @@ void CSimulation::CalcWaveProperties(int const nCoast, int const nCoastSize, int
       }
    }
 
-   LogStream << m_ulIter << ": nProfile = " << nProfile << " " << (dAlpha_0 == 0 ? "OFFSHORE" : "onshore") << " dBreakingWaveHeight = " << dBreakingWaveHeight << " dFluxOrientationThis = " << dFluxOrientationThis << " dBreakingWaveOrientation = " << dBreakingWaveOrientation << " dBreakingDepth = " << dBreakingDepth << endl;
+//   LogStream << m_ulIter << ": nProfile = " << nProfile << " " << (dAlpha_0 == 0 ? "OFFSHORE" : "onshore") << " dBreakingWaveHeight = " << dBreakingWaveHeight << " dFluxOrientationThis = " << dFluxOrientationThis << " dBreakingWaveOrientation = " << dBreakingWaveOrientation << " dBreakingDepth = " << dBreakingDepth << endl;
 
    // Set the breaking wave height, breaking wave angle, and depth of breaking for the coast point
    m_VCoast[nCoast].SetBreakingWaveHeight(nCoastPoint, dBreakingWaveHeight);
@@ -544,8 +544,8 @@ void CSimulation::InterpolateWavePropertiesToCells(int const nCoast, int const n
                nNextProfileX = m_VCoast[nCoast].pGetProfile(nProfile+1)->PtiGetCellInProfile(nProfilePoint)->nGetX(),
                nNextProfileY = m_VCoast[nCoast].pGetProfile(nProfile+1)->PtiGetCellInProfile(nProfilePoint)->nGetY();
 
-            assert(bIsWithinGrid(nThisProfileX, nThisProfileY));
-            assert(bIsWithinGrid(nNextProfileX, nNextProfileY));
+//             assert(bIsWithinGrid(nThisProfileX, nThisProfileY));
+//             assert(bIsWithinGrid(nNextProfileX, nNextProfileY));
 
             // Get the wave angle and height values from the corresponding cells under the two profiles
             double
@@ -558,7 +558,7 @@ void CSimulation::InterpolateWavePropertiesToCells(int const nCoast, int const n
                dNextProfileWaveAngle = m_pRasterGrid->Cell[nNextProfileX][nNextProfileY].dGetWaveOrientation(),
                dWaveOrientation = (dThisWeight * dThisProfileWaveAngle) + (dNextWeight * dNextProfileWaveAngle);
 
-            assert(dThisProfileWaveHeight >= 0);
+//             assert(dThisProfileWaveHeight >= 0);
 
             if (nDirection == DIRECTION_FORWARD)
             {
@@ -570,8 +570,8 @@ void CSimulation::InterpolateWavePropertiesToCells(int const nCoast, int const n
             {
                // Going backward: have we already calculated a wave height value for this cell when going forwards?
                double dTempWaveHeight = m_pRasterGrid->Cell[nX][nY].dGetWaveHeight();
-               assert(dTempWaveHeight >= 0);
-               assert(dWaveHeight >= 0);
+//                assert(dTempWaveHeight >= 0);
+//                assert(dWaveHeight >= 0);
                if (dTempWaveHeight != m_dOffshoreWaveHeight)
                   // We have, so average the two
                   dWaveHeight = (dTempWaveHeight + dWaveHeight) / 2;
@@ -653,7 +653,7 @@ void CSimulation::InterpolateWavePropertiesToCells(int const nCoast, int const n
                nThisProfileX = m_VCoast[nCoast].pGetProfile(nProfile)->PtiGetCellInProfile(nProfilePoint)->nGetX(),
                nThisProfileY = m_VCoast[nCoast].pGetProfile(nProfile)->PtiGetCellInProfile(nProfilePoint)->nGetY();
 
-            assert(bIsWithinGrid(nThisProfileX, nThisProfileY));
+//             assert(bIsWithinGrid(nThisProfileX, nThisProfileY));
 
             // Get the wave angle and height values from the cells under the profile point
             double
