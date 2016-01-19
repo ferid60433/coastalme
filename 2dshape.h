@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  * \file 2dshape.h

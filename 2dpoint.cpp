@@ -1,12 +1,12 @@
 /*!
  *
  * \file 2dpoint.cpp
- * \brief C2DPoint routines
- * \details TODO A more detailed description of these routines.
+ * \brief Class used to represent 2D point objects with floating-point co-ordinates
+ * \details The C2DPoint class is used to represent 2D points where the x and y co-ordinates are floating-point values, e.g. points for which the x and y co-ordinates are in the external CRS (co-ordinate reference system)
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */

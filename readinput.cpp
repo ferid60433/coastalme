@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -187,7 +187,7 @@ bool CSimulation::bReadIni(void)
 
 /*==============================================================================================================================
 
- The bReadRunData member function reads the run details input file and does some initialization
+ Reads the run details input file and does some initialization
 
 ==============================================================================================================================*/
 bool CSimulation::bReadRunData(void)
@@ -308,7 +308,7 @@ bool CSimulation::bReadRunData(void)
             strRH = strTrimRight(&strRH);
 
             // Calculate the duration of the simulation in hours
-            m_dSimDuration = atof(strRH.c_str()) * m_nDurationUnitsMult;
+            m_dSimDuration = atof(strRH.c_str()) * m_dDurationUnitsMult;
 
             if (m_dSimDuration <= 0)
                strErr = "duration of simulation must be greater than zero";
@@ -1269,7 +1269,7 @@ bool CSimulation::bReadRunData(void)
          case 39:
             // Planview width of cliff deposition talus (in cells) [must be odd]
             m_nCliffDepositionPlanviewWidth = atoi(strRH.c_str());
-            if (! m_nCliffDepositionPlanviewWidth % 2)
+            if ((m_nCliffDepositionPlanviewWidth % 2) == 0)
                strErr = "planview width of cliff deposition must be odd";
             if (m_nCliffDepositionPlanviewWidth <= 0)
                strErr = "planview width of cliff deposition must be greater than 0";
@@ -1320,9 +1320,9 @@ bool CSimulation::bReadRunData(void)
             break;
 
          case 46:
-            // Interval for coast curvature calcs
-            m_dCoastCurvatureInterval = atof(strRH.c_str());
-            if (m_dCoastCurvatureInterval <= 0)
+            // Interval for coast curvature calcs (integer number of points)
+            m_nCoastCurvatureInterval = atoi(strRH.c_str());
+            if (m_nCoastCurvatureInterval <= 0)
                strErr = "interval for coast curvature calculations must be greater than zero";
             break;
 
@@ -1332,6 +1332,16 @@ bool CSimulation::bReadRunData(void)
             m_bOutputProfileData = false;
             if (strRH.find("y") != string::npos)
                m_bOutputProfileData = true;
+
+            // Check whether profile spacing has a random component, if it does then saving profiles is meaningless since the 'same' profile will not be saved each time
+            if (m_bOutputProfileData && (m_dCoastNormalRandSpaceFact != 0))
+            {
+               stringstream s;
+               s << m_dCoastNormalRandSpaceFact;
+               // There is a random component, so warn the user and turn off the random component
+               strErr = "You have specified a random factor of " + s.str() + " for the spacing of coastline normals.\nThis is incompatible with the option to output profile data";
+            }
+
             break;
 
          case 48:
@@ -1400,7 +1410,7 @@ bool CSimulation::bReadRunData(void)
          if (! strErr.empty())
          {
             // Error in input to run details file
-            cerr << ERR << "reading " << strErr << " in " << m_strDataPathName << endl << "'" << szRec << "'" << endl;
+            cerr << endl << ERR << strErr << ".\nPlease edit " << m_strDataPathName << " and change this line:" << endl << "'" << szRec << "'" << endl << endl;
             InStream.close();
             return false;
          }

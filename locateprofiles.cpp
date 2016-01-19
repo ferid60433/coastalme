@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -35,7 +35,7 @@
 int CSimulation::nCreateCoastlineProfiles(void)
 {
    // For each coastline, find the points along the coastline from which to start a normal profile
-   for (int i = 0; i < static_cast<int>(m_VCoast.size()); i++)
+   for (unsigned int i = 0; i < m_VCoast.size(); i++)
    {
       // The normal profiles differ in position by a random amount each iteration
       double dSpacing = m_dCoastNormalAvgSpacing;
@@ -49,27 +49,28 @@ int CSimulation::nCreateCoastlineProfiles(void)
          dSpacing = tMax(dSpacing, m_dCellSide);
       }
 
+      int nCoastSize = m_VCoast[i].nGetCoastlineSize();
       int nProfile = -1;
-      int nPoint = 1;                                             // Must start from 1, since we must access point before this
-      int nPointMax = m_VCoast[i].nGetCoastlineSize()-2;          // Similar, we must access point after this
+      int nCoastPoint = 0;
       double dTmpLen = 0;
 
-      while (++nPoint < nPointMax)
+      while (++nCoastPoint < nCoastSize)
       {
-         dTmpLen += m_VCoast[i].dGetCoastlineSegmentLength(nPoint, nPoint-1);
+         int nCoastPointBefore = tMax(nCoastPoint-1, 0);
+         dTmpLen += m_VCoast[i].dGetCoastlineSegmentLength(nCoastPoint, nCoastPointBefore);
          if (dTmpLen >= dSpacing)
          {
             // OK, create the normal profile here, at this point on the coastline. Make the start of the profile the centroid of the actual cell that is marked as coast (not the cell under the smoothed vector coast, they may well be different)
             C2DPoint PtStart;                                     // PtStart has coordinates in external CRS
-            PtStart.SetX(dGridXToExtCRSX(m_VCoast[i].pPtiGetCellMarkedAsCoastline(nPoint)->nGetX()));
-            PtStart.SetY(dGridYToExtCRSY(m_VCoast[i].pPtiGetCellMarkedAsCoastline(nPoint)->nGetY()));
+            PtStart.SetX(dGridXToExtCRSX(m_VCoast[i].pPtiGetCellMarkedAsCoastline(nCoastPoint)->nGetX()));
+            PtStart.SetY(dGridYToExtCRSY(m_VCoast[i].pPtiGetCellMarkedAsCoastline(nCoastPoint)->nGetY()));
 
             C2DPoint PtEnd;
-            if (nGetCoastNormalEndPoint(i, nPoint, &PtStart, m_dCoastNormalLength, &PtEnd) != RTN_OK)
+            if (nGetCoastNormalEndPoint(i, nCoastPoint, nCoastSize, &PtStart, m_dCoastNormalLength, &PtEnd) != RTN_OK)
                continue;
 
             // Create a new profile
-            m_VCoast[i].AppendProfile(nPoint);
+            m_VCoast[i].AppendProfile(nCoastPoint);
             nProfile++;
 
             // Finally, create the profile's coastline-normal vector (external CRS)
@@ -86,7 +87,7 @@ int CSimulation::nCreateCoastlineProfiles(void)
 //             LogStream << "Start is [" << PtStart.dGetX() << "][" << PtStart.dGetY() << "]" << endl;
 //             LogStream << "End   is [" << PtEnd.dGetX() << "][" << PtEnd.dGetY() << "]" << endl;
 //             LogStream << endl;
-//         if (++nPoint >= m_VCoast[i].nGetCoastlineSize()-1)
+//         if (++nCoastPoint >= m_VCoast[i].nGetCoastlineSize()-1)
 //            break;
          }
       }
@@ -106,12 +107,17 @@ int CSimulation::nCreateCoastlineProfiles(void)
  Finds the end point of a coastline-normal line, given the start point
 
 ===============================================================================================================================*/
-int CSimulation::nGetCoastNormalEndPoint(int const nCoast, int const nStartPoint, C2DPoint* const pPtStart, double const dLineLength, C2DPoint* pPtEnd)
+int CSimulation::nGetCoastNormalEndPoint(int const nCoast, int const nStartPoint, int const nCoastSize, C2DPoint* const pPtStart, double const dLineLength, C2DPoint* pPtEnd)
 {
    // TODO Could use pre-calculated azimuths here maybe
-   // First get the y = a * x + b equation of the straight line linking the coastline points before and after 'this' coastline point
-   C2DPoint PtBefore = *m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nStartPoint-1);           // PtBefore has coordinates in external CRS
-   C2DPoint PtAfter = *m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nStartPoint+1);            // PtAfter has coordinates in external CRS
+
+   // If at start or end of coast, need special treatment for points before and points after
+   int nCoastPointBefore = tMax(nStartPoint-1, 0);
+   int nCoastPointAfter = tMin(nStartPoint+1, nCoastSize-1);
+
+   // Get the y = a * x + b equation of the straight line linking the coastline points before and after 'this' coastline point
+   C2DPoint PtBefore = *m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nCoastPointBefore);           // PtBefore has coordinates in external CRS
+   C2DPoint PtAfter = *m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nCoastPointAfter);             // PtAfter has coordinates in external CRS
 
    // For this linking line, slope a = (y2 - y1) / (x2 - x1)
    double dYDiff = PtAfter.dGetY() - PtBefore.dGetY();
@@ -166,7 +172,7 @@ int CSimulation::nGetCoastNormalEndPoint(int const nCoast, int const nStartPoint
    *pPtEnd = PtChooseEndPoint(bSeaHand, &PtBefore, &PtAfter, dXEnd1, dYEnd1, dXEnd2, dYEnd2);
 
    // Check that pPtEnd is not off the grid
-   if (! bIsWithinGrid(dExtCRSXToGridX(pPtEnd->dGetX()), dExtCRSYToGridY(pPtEnd->dGetY())))
+   if (! bIsWithinGrid( static_cast<int>(dRound(dExtCRSXToGridX(pPtEnd->dGetX()))), static_cast<int>(dRound(dExtCRSYToGridY(pPtEnd->dGetY())))))
    {
 //      LogStream << WARN << "iteration " << m_ulIter << ": profile endpoint is outside grid for coastline " << nCoast << ",  from coastline point " << nStartPoint << "), ignored" << endl;
       return RTN_ERR_OFFGRIDENDPOINT;
@@ -427,8 +433,8 @@ int CSimulation::nRasterizeCoastlineNormalProfile(vector<C2DPoint>* const pVPoin
       // Process each interpolated point
       for (int m = 0; m < nLength; m++)
       {
-         nX = dRound(dX);
-         nY = dRound(dY);
+         nX = static_cast<int>(dRound(dX));
+         nY = static_cast<int>(dRound(dY));
 
          // Make sure the interpolated point is within the raster grid
          if (! bIsWithinGrid(nX, nY))
@@ -539,8 +545,17 @@ bool CSimulation::bCheckForIntersection(vector<C2DPoint>* const pVProfile1, vect
       dDiffY2 = dY4 - dY3;
 
     double
-      dS = (-dDiffY1 * (dX1 - dX3) + dDiffX1 * (dY1 - dY3)) / (-dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2),
-      dT = ( dDiffX2 * (dY1 - dY3) - dDiffY2 * (dX1 - dX3)) / (-dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2);
+      dS = 0,
+      dT = 0,
+      dTmp = 0;
+
+    dTmp = -dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2;
+    if (dTmp != 0)
+      dS = (-dDiffY1 * (dX1 - dX3) + dDiffX1 * (dY1 - dY3)) / dTmp;
+
+    dTmp = -dDiffX2 * dDiffY1 + dDiffX1 * dDiffY2;
+    if (dTmp != 0)
+      dT = (dDiffX2 * (dY1 - dY3) - dDiffY2 * (dX1 - dX3)) / dTmp;
 
     if (dS >= 0 && dS <= 1 && dT >= 0 && dT <= 1)
     {

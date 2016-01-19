@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -71,14 +71,14 @@ int CSimulation::nDoAllCliffCollapse(void)
                   dCoarseCollapse = 0;
 
                // Do the cliff collapse
-               nRet = nDoCliffCollapse(pCliff, dNotchDeepening, dFineCollapse, dSandCollapse, dCoarseCollapse);
+               nRet = nDoAllCliffCollapse(pCliff, dNotchDeepening, dFineCollapse, dSandCollapse, dCoarseCollapse);
                if (nRet == RTN_OK)
                {
                   // No problems with the collapse, but what if only fine sediment was produced by the collapse?
                   if ((dSandCollapse + dCoarseCollapse) > 0)
                   {
                      // OK, there is some sand and/or coarse sediment to deposit
-                     nRet = nDoCliffCollapseDeposition(pCliff, dSandCollapse, dCoarseCollapse);
+                     nRet = nDoAllCliffCollapseDeposition(pCliff, dSandCollapse, dCoarseCollapse);
                      if (nRet != RTN_OK)
                         return nRet;
                   }
@@ -101,7 +101,7 @@ int CSimulation::nDoAllCliffCollapse(void)
  Simulates cliff collapse on a single cliff object: it updates both the cliff object and the cell 'under' the cliff object
 
 ===============================================================================================================================*/
-int CSimulation::nDoCliffCollapse(CCliff* pCliff, double const dNotchDeepen, double& dFineCollapse, double& dSandCollapse, double& dCoarseCollapse)
+int CSimulation::nDoAllCliffCollapse(CCliff* pCliff, double const dNotchDeepen, double& dFineCollapse, double& dSandCollapse, double& dCoarseCollapse)
 {
    // Get the cliff cell's grid coords
    int nX = pCliff->PtiGetLocation().nGetX();
@@ -291,7 +291,7 @@ int CSimulation::nDoCliffCollapse(CCliff* pCliff, double const dNotchDeepen, dou
  Redistributes the sand-sized and coarse-sized sediment from all this iteration's cliff collapses onto the foreshore, as talus. The talus is added to the existing beach volume (i.e. the unconsolidated sediment). The shoreline is then iteratively advanced seaward until all this volume is accommodated under a Dean equilibrium profile. This equilibrium beach profile is h(y) = A * y^(2/3) where h(y) is the water depth at a distance y from the shoreline and A is a sediment-dependent scale parameter (for a 0.2mm D50, it will be 0.1 m^(1/3))
 
 ===============================================================================================================================*/
-int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCollapse, double const dCoarseCollapse)
+int CSimulation::nDoAllCliffCollapseDeposition(CCliff* pCliff, double const dSandCollapse, double const dCoarseCollapse)
 {
    int
       nCoast = pCliff->nGetCoast(),
@@ -319,7 +319,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
    for (int n = 0; n < m_nCliffDepositionPlanviewWidth; n++)
    {
       nVWidthDistSigned[n] = nSigned++;
-      nVProfileLength[n] = m_dCliffDepositionPlanviewLength;
+      nVProfileLength[n] = static_cast<int>(dRound(m_dCliffDepositionPlanviewLength));
       dVToDepositPerProfile[n] = (dTotSandToDeposit + dTotCoarseToDeposit) / m_nCliffDepositionPlanviewWidth;
    }
 
@@ -396,7 +396,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
 
          // Now construct a deposition collapse profile from the start point. First get the end point of this coastline-normal line, it is one longer than the specified length because it includes the cliff point in the profile
          double dThisProfileLength = nVProfileLength[nAcross] + nSeawardOffset + 1;
-         int nRtn = nGetCoastNormalEndPoint(nCoast, nThisPoint, &PtStart, dThisProfileLength, &PtEnd);
+         int nRtn = nGetCoastNormalEndPoint(nCoast, nThisPoint, nCoastSize, &PtStart, dThisProfileLength, &PtEnd);
          if (nRtn != RTN_OK)
          {
             // Could not find an end point so forget this profile
@@ -545,9 +545,9 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
             double dPropToDeposit = dVToDepositPerProfile[nAcross] / dTotElevDiff;
 //            LogStream << "dPropToDeposit = " << dPropToDeposit << endl;
 
-            double
-               dDepositedCheck = 0,
-               dRemovedCheck = 0;
+//             double
+//                dDepositedCheck = 0,
+//                dRemovedCheck = 0;
 
             // Yes it does, so adjust all cells in this profile
             for (int n = 0; n < nRasterProfileLength; n++)
@@ -573,7 +573,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                      m_pRasterGrid->Cell[nX][nY].pGetLayer(nTopLayer)->pGetUnconsolidatedSediment()->SetSand(dSandNow + dPotentialSandToDeposit);
 
                      dTotSandToDeposit -= dPotentialSandToDeposit;
-                    dDepositedCheck += dPotentialSandToDeposit;
+//                     dDepositedCheck += dPotentialSandToDeposit;
                   }
 
                   double dPotentialCoarseToDeposit = 0;
@@ -586,7 +586,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                      m_pRasterGrid->Cell[nX][nY].pGetLayer(nTopLayer)->pGetUnconsolidatedSediment()->SetCoarse(dCoarseNow + dPotentialCoarseToDeposit);
 
                      dTotCoarseToDeposit -= dPotentialCoarseToDeposit;
-                    dDepositedCheck += dPotentialCoarseToDeposit;
+//                     dDepositedCheck += dPotentialCoarseToDeposit;
                   }
 
                   // Now update the cell's layer elevations
@@ -613,7 +613,7 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                   int nCoarseWeight = (dExistingAvailableCoarse > 0 ? 1 : 0);
 
                   double dTotErodibility = (nFineWeight * m_dFineErodibility) + (nSandWeight * m_dSandErodibility) + (nCoarseWeight * m_dCoarseErodibility);
-                 double dTotActualErosion = 0;
+//                 double dTotActualErosion = 0;
 
                   if (nFineWeight)
                   {
@@ -624,8 +624,8 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                      double dFine = tMin(dExistingAvailableFine, dFineLowering);
                      double dRemaining = dExistingAvailableFine - dFine;
 
-                    dTotActualErosion += dFine;
-                    dRemovedCheck += dFine;
+//                    dTotActualErosion += dFine;
+//                    dRemovedCheck += dFine;
 
                      // Set the value for this layer
                      m_pRasterGrid->Cell[nX][nY].pGetLayer(nTopLayer)->pGetUnconsolidatedSediment()->SetFine(dRemaining);
@@ -643,8 +643,8 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                      double dSand = tMin(dExistingAvailableSand, dSandLowering);
                      double dRemaining = dExistingAvailableSand - dSand;
 
-                    dTotActualErosion += dSand;
-                    dRemovedCheck += dSand;
+//                    dTotActualErosion += dSand;
+//                    dRemovedCheck += dSand;
 
                      // Set the value for this layer
                      m_pRasterGrid->Cell[nX][nY].pGetLayer(nTopLayer)->pGetUnconsolidatedSediment()->SetSand(dRemaining);
@@ -662,8 +662,8 @@ int CSimulation::nDoCliffCollapseDeposition(CCliff* pCliff, double const dSandCo
                      double dCoarse = tMin(dExistingAvailableCoarse, dCoarseLowering);
                      double dRemaining = dExistingAvailableCoarse - dCoarse;
 
-                    dTotActualErosion += dCoarse;
-                    dRemovedCheck += dCoarse;
+//                    dTotActualErosion += dCoarse;
+//                    dRemovedCheck += dCoarse;
 
                      // Set the value for this layer
                      m_pRasterGrid->Cell[nX][nY].pGetLayer(nTopLayer)->pGetUnconsolidatedSediment()->SetCoarse(dRemaining);
@@ -757,8 +757,8 @@ int CSimulation::nRasterizeCliffCollapseProfile(vector<C2DPoint>* const pVPoints
       // Process each interpolated point
       for (int m = 0; m < nLength; m++)
       {
-         nX = dRound(dX);
-         nY = dRound(dY);
+         nX = static_cast<int>(dRound(dX));
+         nY = static_cast<int>(dRound(dY));
 
          // Make sure the interpolated point is within the raster grid (can get this kind of problem due to rounding)
          KeepWithinGrid(nX, nY);

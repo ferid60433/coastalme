@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -32,7 +32,7 @@
  Locate the vector coastline(s), set up the vector coastline-normal profiles, and put both these onto the raster grid
 
 ===============================================================================================================================*/
-int CSimulation::nLocateCoastlineAndProfiles(void)
+int CSimulation::nLocateAllCoastlinesAndProfiles(void)
 {
    // First, remove any existing coastline(s) from the raster grid, and clear the vector coastline(s) and all associated vector coastline-normal profiles
    ClearRasterAndVectorCoastlines();
@@ -132,16 +132,16 @@ int CSimulation::nTraceCoastline(void)
 void CSimulation::FindEdgePoints(int const nEdgeToSearch, vector<bool>* VbMatched, vector <int>* VnMatchedWith, vector<int>* VnHandedness, vector<int>* VnSearchDirection, vector<int>* VnStartEdge, vector<C2DIPoint>* VPtiEdgePoint)
 {
    int
-      nX,
-      nY,
-      nXLast,
-      nYLast,
-      nStart,
-      nEnd,
-      nHandDH,
-      nHandUH,
-      nSearchDirection,
-      nStartEdge;
+      nX = 0,
+      nY = 0,
+      nXLast = 0,
+      nYLast = 0,
+      nStart = 0,
+      nEnd = 0,
+      nHandDH = 0,
+      nHandUH = 0,
+      nSearchDirection = 0,
+      nStartEdge = 0;
    double
       dLastElev = DBL_MAX;
 
@@ -373,17 +373,17 @@ bool CSimulation::bDoTracing(vector<bool>* VbMatched, vector <int>* VnMatchedWit
          KeepWithinGrid(nX, nY);       // Safety check, is rarely needed but keep it anyway
 
          int
-            nXSeaward,
-            nYSeaward,
-            nSeawardNewDirection,
-            nXStraightOn,
-            nYStraightOn,
-            nXAntiSeaward,
-            nYAntiSeaward,
-            nAntiSeawardNewDirection,
-            nXGoBack,
-            nYGoBack,
-            nGoBackNewDirection;
+            nXSeaward = 0,
+            nYSeaward = 0,
+            nSeawardNewDirection = 0,
+            nXStraightOn = 0,
+            nYStraightOn = 0,
+            nXAntiSeaward = 0,
+            nYAntiSeaward = 0,
+            nAntiSeawardNewDirection = 0,
+            nXGoBack = 0,
+            nYGoBack = 0,
+            nGoBackNewDirection = 0;
 
          C2DIPoint Pti(nX, nY);
 

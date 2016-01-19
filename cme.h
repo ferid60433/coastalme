@@ -19,7 +19,7 @@
    Where land runs out and nothing’s sound.\n
    Nothing lasts long on Shingle Street.\n
    \n
-   By Blake Morrison (2015). See http://www.randomhouse.co.uk/editions/shingle-street/9780701188771\n
+   By Blake Morrison (2016). See http://www.randomhouse.co.uk/editions/shingle-street/9780701188771\n
 
  * \section install_sec Installation
 
@@ -48,6 +48,11 @@
 
 ===============================================================================================================================*/
 using namespace std;
+
+#ifdef _MSC_VER
+   #pragma warning(push, 0)
+#endif
+
 #include <assert.h>
 #include <ctype.h>                  // for tolower()
 #include <stdlib.h>                 // for atof()
@@ -77,6 +82,10 @@ using namespace std;
 #include <ogrsf_frmts.h>
 //#include <ogr_feature.h>
 
+#ifdef _MSC_VER
+   #pragma warning(pop)
+#endif
+
 using std::string;
 using std::vector;
 using std::stringstream;
@@ -95,6 +104,11 @@ using std::find;
 using std::transform;
 
 //===================================================== platform-specific stuff =================================================
+#ifdef _WIN32
+   #define           access   _access
+   #define           F_OK     0                                   // Test for file existence
+#endif
+
 #ifdef _MSC_VER
    // MS Visual C++, byte order is IEEE little-endian, 32-bit
    #ifdef _DEBUG
@@ -115,10 +129,11 @@ using std::transform;
    #else
       string const PLATFORM                   = "Other/MS Visual C++";
    #endif
+#endif
 
-#elif defined __GNUG__
+#ifdef __GNUG__
    // GNU C++
-   #if ! defined CPU
+   #ifndef CPU
       #error GNU CPU not defined!
    #else
       #ifdef x86
@@ -148,8 +163,16 @@ using std::transform;
          double const CLOCK_T_RANGE                = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
       #endif
    #endif
+#endif
 
-#elif defined __HP_aCC
+#ifdef __MINGW32__
+   // Minimalist GNU for Windows
+//   #define __USE_MINGW_ANSI_STDIO 1        // Fix long doubles output problem, see http://stackoverflow.com/questions/7134547/gcc-printf-and-long-double-leads-to-wrong-output-c-type-conversion-messes-u
+
+   #define WEXITSTATUS(x) ((x) & 0xff)
+#endif
+
+#ifdef __HP_aCC
    // HP-UX aCC, byte order is big-endian, can be either 32-bit or 64-bit
    string const PLATFORM                      = "HP-UX aC++";
    // clock_t is an unsigned long: see <time.h>
@@ -162,12 +185,13 @@ using std::transform;
    #endif
 #endif
 
+
 //===================================================== hard-wired constants ====================================================
 string const   PROGNAME                      = "CoastalME 0.3";
 string const   SHORTNAME                     = "CME";
 string const   CME_INI                       = "cme.ini";
 
-string const   COPYRIGHT                     = "(C) 2015 Andres Payo, David Favis-Mortlock and Jim Hall";
+string const   COPYRIGHT                     = "(C) 2016 David Favis-Mortlock, Andres Payo, and Jim Hall";
 string const   LINE                          = "-------------------------------------------------------------------------------";
 string const   DISCLAIMER1                   = "This program is distributed in the hope that it will be useful, but WITHOUT ANY";
 string const   DISCLAIMER2                   = "WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A";
@@ -223,20 +247,13 @@ string const   EMAILERROR                    = "Could not send email";
 string const   SHAPEFUNCTIONFILE             = "in/ShapeFunction.dat";
 string const   EROSIONPOTENTIALLOOKUPFILE    = "ErosionPotential.csv";
 
+char const     PATH_SEPARATOR                = '/';               // Works for Windows too!
 char const     SPACE                         = ' ';
 char const     QUOTE1                        = ';';
 char const     QUOTE2                        = '#';
 string const   SPACESTR                      = " ";
 
-#ifdef _WIN32
-   char const        PATH_SEPARATOR = '\\';
-   #define           access   _access
-   #define           F_OK     0                                   // Test for file existence
-#else
-   char const        PATH_SEPARATOR = '/';
-#endif
-
-int const      BUFSIZE                       = 1024;              // Max length (inc terminating NULL) of any C-type string
+int const      BUFSIZE                       = 1024;              // Max length (inc. terminating NULL) of any C-type string
 int const      SAVEMAX                       = 100;
 int const      CLOCKCHKITER                  = 5000;
 int const      NRNG                          = 2;                 // Might add more RNGs in later version
@@ -257,7 +274,7 @@ double const   INVDODBINCREMENT              = 1000;              // Inverse of 
 
 double const   EROSIONPOTENTIALTOLERANCE     = -1e-12;            // Erosion potential above this (is a -ve number) is ignored
 
-int const      ROUNDLOOPMAX                  = 5e4 - 1;           // In coastline tracing, give up if round loop more than this
+int const      ROUNDLOOPMAX                  = 50000;             // In coastline tracing, give up if round loop more than this
 unsigned int const COASTMIN                  = 9;                 // Ditto, minimum number of points in a coastline
 
 string const   ERR                           = "ERROR ";

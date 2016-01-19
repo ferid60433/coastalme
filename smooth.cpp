@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -402,6 +402,12 @@ void CSimulation::CalcSavitzkyGolay(double dFilterCoeffsArray[], int const nWind
 ==============================================================================================================================*/
 void LUDecomp(Matrix A, int const N, int const np, int nIndexArray[], int* nDCode, int* nICode)
 {
+   if (N >= np)
+   {
+      cerr << ERR << "in LUDecomp" << endl;
+      return;
+   }
+
    double TINY = 1e-12;
    double AMAX, DUM, SUM;
    double* VV = new double[np];

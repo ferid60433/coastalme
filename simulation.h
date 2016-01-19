@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  * \file simulation.h
@@ -96,8 +96,8 @@ private:
       m_nGISSave,
       m_nUSave,
       m_nThisSave,
-      m_nDurationUnitsMult,
       m_nCoastMax,
+      m_nCoastCurvatureInterval,
       m_nNThisIterCliffCollapse,
       m_nNTotCliffCollapse,
       m_nCliffDepositionPlanviewWidth;
@@ -115,6 +115,7 @@ private:
       m_ulTotPotErosionBetweenProfiles;
 
    double
+      m_dDurationUnitsMult,
       m_dExtCRSNorthWestX,
       m_dExtCRSSouthEastX,
       m_dExtCRSNorthWestY,
@@ -151,7 +152,6 @@ private:
       m_dCoastNormalAvgSpacing,
       m_dCoastNormalLength,
       m_dCoastNormalRandSpaceFact,
-      m_dCoastCurvatureInterval,
       m_dThisIterTotSeaDepth,
       m_dThisIterPotentialErosion,
       m_dThisIterActualErosion,
@@ -323,9 +323,10 @@ private:
    bool bReadRunData(void);
    bool bOpenLogFile(void);
    bool bSetUpTSFiles(void);
-   void WriteRunDetails(void);
+   void WriteStartRunDetails(void);
    bool bWritePerIterationResults(void);
    bool bWriteTSFiles(void);
+   int nWriteEndRunDetails(void);
    int nReadShapeFunction(void);
    int nReadTideData(void);
    int nSaveProfile(int const, int const, int const, vector<double>* const, vector<double>* const, vector<double>* const, vector<double>* const, vector<double>* const, vector<double>* const, vector<double>* const, vector<C2DIPoint>* const);
@@ -349,14 +350,14 @@ private:
    int nUpdateIntervention(void);
    int nCalcExternalForcing(void);
    int nInitGridAndCalcStillWaterLevel(void);
-   int nLocateCoastlineAndProfiles(void);
+   int nLocateAllCoastlinesAndProfiles(void);
    int nDoAllPropagateWaves(void);
    int nDoAllCliffCollapse(void);
-   int nDoCliffCollapse(CCliff*, double const, double&, double&, double&);
-   int nDoCliffCollapseDeposition(CCliff*, double const, double const);
-   int nLocateEstuaries(void);
+   int nDoAllCliffCollapse(CCliff*, double const, double&, double&, double&);
+   int nDoAllCliffCollapseDeposition(CCliff*, double const, double const);
+   int nLocateAllEstuaries(void);
    int nClassifyCoastlineProfiles(void);
-   int nErodeAllCoasts(void);
+   int nDoAllShorePlatFormErosion(void);
    int nDoAllAlongshoreSedimentTransport(void);
    int nUpdateGrid(void);
 
@@ -382,7 +383,7 @@ private:
    void DoActualErosionOnCell(int const, int const);
    double dLookUpErosionPotential(double const) const;
    C2DPoint PtChooseEndPoint(bool const, C2DPoint* const, C2DPoint* const, double const, double const, double const, double const);
-   int nGetCoastNormalEndPoint(int const, int const, C2DPoint* const, double const, C2DPoint*);
+   int nGetCoastNormalEndPoint(int const, int const, int const, C2DPoint* const, double const, C2DPoint*);
    void LandformToGrid(int const, int const);
    void CalcWaveProperties(int const, int const, int const);
    void DoFluxOrientation(int const);
@@ -482,15 +483,26 @@ private:
 
 public:
    ofstream LogStream;
-      int nNextCoastPoint;
 
    CSimulation(void);
    ~CSimulation(void);
+
+   //! Returns this iteration's still water level
    double dGetStillWaterLevel(void) const;
+
+   //! Returns the cell size
    double dGetCellSide(void) const;
+
+   //! Returns the size of the grid in the X direction
    int nGetGridXMax(void) const;
+
+   //! Returns the size of the grid in the Y direction
    int nGetGridYMax(void) const;
+
+   //! Runs the simulation
    int nDoSimulation(int, char* []);            // can be const according to cppcheck
+
+   //! Carries out end-of-simulation tidying (error messages etc.)
    void DoSimulationEnd(int const);
 
 };

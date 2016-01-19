@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -30,7 +30,7 @@
  Locate estuaries
 
 ===============================================================================================================================*/
-int CSimulation::nLocateEstuaries(void)
+int CSimulation::nLocateAllEstuaries(void)
 {
    // TODO
    return RTN_OK;

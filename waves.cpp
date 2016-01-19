@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -328,7 +328,7 @@ void CSimulation::InterpolateWavePropertiesToCoastline(int const nCoast, int con
       m_VCoast[nCoast].SetBreakingWaveHeight(n, dBreakingWaveHeight);
       m_VCoast[nCoast].SetBreakingWaveAngle(n, dBreakingWaveOrientation);
       m_VCoast[nCoast].SetDepthOfBreaking(n, dBreakingDepth);
-      m_VCoast[nCoast].SetBreakingDistance(n, dRound(dBreakingDist));
+      m_VCoast[nCoast].SetBreakingDistance(n, static_cast<int>(dRound(dBreakingDist)));
    }
 
    // -----------------------------------------------------------------------------------------------------------------

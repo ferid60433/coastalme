@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -32,7 +32,7 @@
  Erodes all coastlines by first calculating erosion on coastline-normal profiles, then extrapolating this to cells between the profiles
 
 ===============================================================================================================================*/
-int CSimulation::nErodeAllCoasts(void)
+int CSimulation::nDoAllShorePlatFormErosion(void)
 {
    static bool bForward = true;
    int nRet = 0;
@@ -153,19 +153,24 @@ int CSimulation::nCalcPotentialErosionOnProfile(int const nCoast, int const nPro
    for (int i = 0; i < nProfSize; i++)
    {
       // Now calculate depth over DB
-      dVProfileDepthOverDB[i] = m_dThisIterStillWaterLevel - dVProfileZ[i];
-      dVProfileDepthOverDB[i] /= dDepthofBreaking;
-
-      // Constrain dDepthOverDB[i] to be between 0 (can get small -ve due to rounding errors) and m_dDepthOverDBMax
-      dVProfileDepthOverDB[i] = tMax(dVProfileDepthOverDB[i], 0.0);
-      dVProfileDepthOverDB[i] = tMin(dVProfileDepthOverDB[i], m_dDepthOverDBMax);
-
-      // And then use the look-up table to find the value of erosion potential at this point on the profile
-      dVProfileErosionPotential[i] = dLookUpErosionPotential(dVProfileDepthOverDB[i]);
-
-      // If erosion potential (a -ve value) is tiny, set it to zero
-      if (dVProfileErosionPotential[i] > EROSIONPOTENTIALTOLERANCE)
+      if (dDepthofBreaking == 0)
          dVProfileErosionPotential[i] = 0;
+      else
+      {
+         dVProfileDepthOverDB[i] = m_dThisIterStillWaterLevel - dVProfileZ[i];
+         dVProfileDepthOverDB[i] /= dDepthofBreaking;
+
+         // Constrain dDepthOverDB[i] to be between 0 (can get small -ve due to rounding errors) and m_dDepthOverDBMax
+         dVProfileDepthOverDB[i] = tMax(dVProfileDepthOverDB[i], 0.0);
+         dVProfileDepthOverDB[i] = tMin(dVProfileDepthOverDB[i], m_dDepthOverDBMax);
+
+         // And then use the look-up table to find the value of erosion potential at this point on the profile
+         dVProfileErosionPotential[i] = dLookUpErosionPotential(dVProfileDepthOverDB[i]);
+
+         // If erosion potential (a -ve value) is tiny, set it to zero
+         if (dVProfileErosionPotential[i] > EROSIONPOTENTIALTOLERANCE)
+            dVProfileErosionPotential[i] = 0;
+      }
    }
 
    // Set up more arrays for points along the profile
@@ -379,19 +384,24 @@ int CSimulation::nCalcPotentialErosionOneSideOfProfile(int const nCoast, int con
       for (int i = 0; i < nParProfSize; i++)
       {
          // Now calculate depth over DB
-         dVParProfileDepthOverDB[i] = m_dThisIterStillWaterLevel - dVParProfileZ[i];
-         dVParProfileDepthOverDB[i] /= dDepthofBreaking;
-
-         // Constrain dDepthOverDB[i] to be between 0 (can get small -ve due to rounding errors) and m_dDepthOverDBMax
-         dVParProfileDepthOverDB[i] = tMax(dVParProfileDepthOverDB[i], 0.0);
-         dVParProfileDepthOverDB[i] = tMin(dVParProfileDepthOverDB[i], m_dDepthOverDBMax);
-
-         // And then use the look-up table to find the value of erosion potential at this point on the profile
-         dVParProfileErosionPotential[i] = dLookUpErosionPotential(dVParProfileDepthOverDB[i]);
-
-         // If erosion potential (a -ve value) is tiny, set it to zero
-         if (dVParProfileErosionPotential[i] > EROSIONPOTENTIALTOLERANCE)
+         if (dDepthofBreaking == 0)
             dVParProfileErosionPotential[i] = 0;
+         else
+         {
+            dVParProfileDepthOverDB[i] = m_dThisIterStillWaterLevel - dVParProfileZ[i];
+            dVParProfileDepthOverDB[i] /= dDepthofBreaking;
+
+            // Constrain dDepthOverDB[i] to be between 0 (can get small -ve due to rounding errors) and m_dDepthOverDBMax
+            dVParProfileDepthOverDB[i] = tMax(dVParProfileDepthOverDB[i], 0.0);
+            dVParProfileDepthOverDB[i] = tMin(dVParProfileDepthOverDB[i], m_dDepthOverDBMax);
+
+            // And then use the look-up table to find the value of erosion potential at this point on the profile
+            dVParProfileErosionPotential[i] = dLookUpErosionPotential(dVParProfileDepthOverDB[i]);
+
+            // If erosion potential (a -ve value) is tiny, set it to zero
+            if (dVParProfileErosionPotential[i] > EROSIONPOTENTIALTOLERANCE)
+               dVParProfileErosionPotential[i] = 0;
+         }
       }
 
       // Set up more arrays for points along the parallel profile

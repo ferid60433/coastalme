@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -42,9 +42,9 @@ void CSimulation::DoCoastCurvature(int const nCoast, int const nHandedness)
    for (int nThis = 0; nThis < nCoastSize; nThis++)
    {
       double dKappa = 0;
-      if ((nThis >= m_dCoastCurvatureInterval) && (nThis < (nCoastSize - m_dCoastCurvatureInterval)))
+      if ((nThis >= m_nCoastCurvatureInterval) && (nThis < (nCoastSize - m_nCoastCurvatureInterval)))
       {
-         dKappa = dCalcCurvature(nHandedness, m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis - m_dCoastCurvatureInterval), m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis), m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis + m_dCoastCurvatureInterval));
+         dKappa = dCalcCurvature(nHandedness, m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis - m_nCoastCurvatureInterval), m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis), m_VCoast[nCoast].pPtGetVectorCoastlinePoint(nThis + m_nCoastCurvatureInterval));
          dTotKappa += dKappa;
          nPoints++;
       }
@@ -54,7 +54,7 @@ void CSimulation::DoCoastCurvature(int const nCoast, int const nHandedness)
 
    // And fill in the end points with the average curvature values
    double dAvgKappa = dTotKappa / nPoints;
-   for (int nThis = 0; nThis < m_dCoastCurvatureInterval; nThis++)
+   for (int nThis = 0; nThis < m_nCoastCurvatureInterval; nThis++)
    {
       m_VCoast[nCoast].SetCurvature(nThis, dAvgKappa);
       m_VCoast[nCoast].SetCurvature(nCoastSize - nThis - 1, dAvgKappa);

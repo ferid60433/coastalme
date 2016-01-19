@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -194,6 +194,9 @@ int CCoast::nGetNCellsMarkedAsCoastline(void) const
 double CCoast::dGetCoastlineSegmentLength(int const m, int const n)     // can be const according to cppcheck
 {
    // NOTE no check to see that m is < m_LCoastline.Size(), same for n
+   if (m == n)
+      return 0;
+      
    return hypot(m_LCoastline[n].dGetX() - m_LCoastline[m].dGetX(), m_LCoastline[n].dGetY() - m_LCoastline[m].dGetY());
 }
 

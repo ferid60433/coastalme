@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -242,22 +242,22 @@ int CSimulation::nDoSimulationTimeMultiplier(string const* strIn)
          break;
 
       case TIME_HOURS:
-         m_nDurationUnitsMult = 1;                     // Multiplier for hours
+         m_dDurationUnitsMult = 1;                     // Multiplier for hours
          m_strDurationUnits = "hours";
          break;
 
       case TIME_DAYS:
-         m_nDurationUnitsMult = 24;                    // Multiplier for days -> hours
+         m_dDurationUnitsMult = 24;                    // Multiplier for days -> hours
          m_strDurationUnits = "days";
          break;
 
       case TIME_MONTHS:
-         m_nDurationUnitsMult = 24 * 30.416667;        // Multiplier for months -> hours (assume 30 + 5/12 day months, no leap years)
+         m_dDurationUnitsMult = 24 * 30.416667;        // Multiplier for months -> hours (assume 30 + 5/12 day months, no leap years)
          m_strDurationUnits = "months";
          break;
 
       case TIME_YEARS:
-         m_nDurationUnitsMult = 24 * 365.25;           // Multiplier for years -> hours
+         m_dDurationUnitsMult = 24 * 365.25;           // Multiplier for years -> hours
          m_strDurationUnits = "years";
          break;
    }
@@ -926,7 +926,7 @@ bool CSimulation::bTimeToQuit(void)
 
    // Not quitting, so increment the iteration count, and recalc total iterations
    m_ulIter++;
-   m_ulTotIter = dRound(m_dSimDuration / m_dTimeStep);
+   m_ulTotIter = static_cast<unsigned long>(dRound(m_dSimDuration / m_dTimeStep));
 
    // Check to see if we have done CLOCKCHKITER iterations: if so, it is time to reset the CPU time running total in case the clock()
    // function later rolls over
@@ -1153,8 +1153,8 @@ string CSimulation::strDispSimTime(const double dTimeIn) const
    // Display years
    if (ulTimeIn >= dHoursInYear)
    {
-      unsigned long ulYears = ulTimeIn / dHoursInYear;
-      ulTimeIn -= (ulYears * dHoursInYear);
+      unsigned long ulYears = static_cast<unsigned long>(dRound(ulTimeIn / dHoursInYear));
+      ulTimeIn -= static_cast<unsigned long>(dRound(ulYears * dHoursInYear));
 
       char szTmp[6] = "";
       strTime = pszTrimLeft(pszLongToSz(ulYears, szTmp, 6));
@@ -1799,7 +1799,6 @@ void CSimulation::DoSimulationEnd(int const nRtn)
          int nRet = system(strCmd.c_str());
          if (WEXITSTATUS(nRet) != 0)
             cerr << ERR << EMAILERROR << endl;
-
       }
    }
 #endif

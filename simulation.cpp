@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -86,11 +86,11 @@ CSimulation::CSimulation(void)
    m_nProfileSmoothWindow              =
    m_nGISSave                          =
    m_nUSave                            =
-   m_nDurationUnitsMult                =
    m_nThisSave                         =
    m_nXGridMax                         =
    m_nYGridMax                         =
    m_nCoastMax                         =
+   m_nCoastCurvatureInterval           =
    m_nNThisIterCliffCollapse           =
    m_nNTotCliffCollapse                =
    m_nCliffDepositionPlanviewWidth     = 0;
@@ -111,6 +111,7 @@ CSimulation::CSimulation(void)
    for (int i = 0; i < SAVEMAX; i++)
       m_dUSaveTime[i] = 0;
 
+   m_dDurationUnitsMult                     =
    m_dExtCRSNorthWestX                      =
    m_dExtCRSSouthEastX                      =
    m_dExtCRSNorthWestY                      =
@@ -133,8 +134,8 @@ CSimulation::CSimulation(void)
    m_dC_0                                   =
    m_dL_0                                   =
    m_dOffshoreWaveHeight                    =
-   m_dOffshoreWaveOrientationIn        =
-   m_dOffshoreWaveOrientation          =
+   m_dOffshoreWaveOrientationIn             =
+   m_dOffshoreWaveOrientation               =
    m_dR                                     =
    m_dBeachProtectionFactor                 =
    m_dFineErodibility                       =
@@ -143,7 +144,6 @@ CSimulation::CSimulation(void)
    m_dCoastNormalAvgSpacing                 =
    m_dCoastNormalLength                     =
    m_dCoastNormalRandSpaceFact              =
-   m_dCoastCurvatureInterval                =
    m_dThisIterTotSeaDepth                   =
    m_dThisIterSedLost                       =
    m_dThisIterPotentialErosion              =
@@ -455,8 +455,8 @@ int CSimulation::nDoSimulation(int nArg, char* pcArgv[])       // can be const a
       return (RTN_ERR_OUTFILE);
    }
 
-   // Write run details to Out and Log files
-   WriteRunDetails();
+   // Write beginning-of-run information to Out and Log files
+   WriteStartRunDetails();
 
    // Start initializing
    AnnounceInitializing();
@@ -496,12 +496,12 @@ int CSimulation::nDoSimulation(int nArg, char* pcArgv[])       // can be const a
          return nRet;
 
       // Now we know which cells are inundated we can locate the coastline, and set up the coastline-normal profiles
-      nRet = nLocateCoastlineAndProfiles();
+      nRet = nLocateAllCoastlinesAndProfiles();
       if (nRet != RTN_OK)
          return nRet;
 
       // Locate estuaries
-      nRet = nLocateEstuaries();
+      nRet = nLocateAllEstuaries();
       if (nRet != RTN_OK)
          return nRet;
 
@@ -526,7 +526,7 @@ int CSimulation::nDoSimulation(int nArg, char* pcArgv[])       // can be const a
          return nRet;
 
       // Simulate erosional elevation change on every coastline-normal profile, and between profiles
-      nRet = nErodeAllCoasts();
+      nRet = nDoAllShorePlatFormErosion();
       if (nRet != RTN_OK)
          return nRet;
 
@@ -575,7 +575,7 @@ int CSimulation::nDoSimulation(int nArg, char* pcArgv[])       // can be const a
          return (RTN_ERR_TSFILEWRITE);
 
       // Next, check for consistency and instability
-      int nRet = nCheckForInstability();
+      nRet = nCheckForInstability();
       if (nRet != RTN_OK)
          return (nRet);
 
@@ -588,91 +588,10 @@ int CSimulation::nDoSimulation(int nArg, char* pcArgv[])       // can be const a
    // Tell the user what is happening
    AnnounceSimEnd();
 
-   // Final write to time series CSV files
-   if (! bWriteTSFiles())
-      return (RTN_ERR_TSFILEWRITE);
-
-   // Save the values from the RasterGrid array into raster GIS files
-   if (! bSaveAllRasterGISFiles())
-      return (RTN_ERR_RASTER_FILE_WRITE);
-
-   // Save the vector GIS files
-   if (! bSaveAllVectorGISFiles())
-      return (RTN_ERR_VECTOR_FILE_WRITE);
-
-   OutStream << " GIS" << m_nGISSave << endl;
-
-   // Print out run totals etc.
-   OutStream << PERITERHEAD1 << endl;
-   OutStream << PERITERHEAD2 << endl;
-   OutStream << PERITERHEAD3 << endl;
-   OutStream << PERITERHEAD4 << endl;
-
-   OutStream << setiosflags(ios::fixed) << setprecision(2);
-   OutStream << endl << endl;
-
-   // Write out hydrology grand totals etc.
-   OutStream << ENDHYDROLOGYHEAD << endl;
-   OutStream << "Minimum still water level = " << m_dMinStillWaterLevel << endl;
-   OutStream << "Maximum still water level = " << m_dMaxStillWaterLevel << endl;
-   OutStream << endl;
-
-   // Now write out sediment movement grand totals etc.
-   OutStream << ENDSEDIMENTHEAD << endl;
-   OutStream << "Total potential erosion = " << m_ldGTotPotentialErosion << endl;
-   OutStream << "Total actual erosion = " << m_ldGTotActualErosion << endl;
-   OutStream << "Total sediment lost from grid = " << m_ldGTotSedLost << endl;
-
-   OutStream << endl;
-
-   OutStream << "Total fine actual erosion = " << m_ldGTotFineActualErosion << endl;
-   OutStream << "Total sand actual erosion = " << m_ldGTotSandActualErosion << endl;
-   OutStream << "Total coarse actual erosion = " << m_ldGTotCoarseActualErosion << endl;
-
-   OutStream << endl;
-
-   OutStream << "Total fine deposition = " << m_ldGTotFineDeposition << endl;
-   OutStream << "Total sand deposition = " << m_ldGTotSandDeposition << endl;
-   OutStream << "Total coarse deposition = " << m_ldGTotCoarseDeposition << endl;
-
-   OutStream << endl;
-
-   OutStream << "Total fine cliff collapse = " << m_ldGTotCliffCollapseFine << endl;
-   OutStream << "Total sand cliff collapse = " << m_ldGTotCliffCollapseSand << endl;
-   OutStream << "Total coarse cliff collapse = " << m_ldGTotCliffCollapseCoarse << endl;
-
-   OutStream << endl;
-
-   OutStream << "Total fine cliff collapse deposition = " << m_ldGTotCliffCollapseFineDeposition << endl;
-   OutStream << "Total sand cliff collapse deposition = " << m_ldGTotCliffCollapseSandDeposition << endl;
-   OutStream << "Total coarse cliff collapse deposition = " << m_ldGTotCliffCollapseCoarseDeposition << endl;
-
-   OutStream << endl << endl;
-
-   // Finally calculate performance details
-   OutStream << PERFORMHEAD << endl;
-   OutStream << "Time simulated: " << strDispSimTime(m_dSimDuration) << endl << endl;
-
-   // Output averages for on-profile and between-profile potential erosion, these should be roughly equal
-   LogStream << setiosflags(ios::fixed);
-   LogStream << endl;
-   LogStream << "On-profile average potential erosion = " << m_dTotPotErosionOnProfiles / m_ulTotPotErosionOnProfiles << " mm (n = " << m_ulTotPotErosionOnProfiles << ")" << endl;
-   LogStream << "Between-profile average potential erosion = " << m_dTotPotErosionBetweenProfiles / m_ulTotPotErosionBetweenProfiles << " mm (n = " << m_ulTotPotErosionBetweenProfiles << ")" << endl;
-   LogStream << endl;
-
-#if ! defined RANDCHECK
-   // Calculate length of run, write in file (note that m_dSimDuration is in hours)
-   CalcTime(m_dSimDuration * 3600);
-#endif
-
-   // Calculate statistics re. memory usage etc.
-   CalcProcessStats();
-   OutStream << endl << "END OF RUN" << endl;
-   LogStream << endl << "END OF RUN" << endl;
-
-   // Need to flush these here (if we don't, the buffer may not get written)
-   LogStream.flush();
-   OutStream.flush();
+   // Write end-of-run information to Out, Log and time-series files
+   nRet = nWriteEndRunDetails();
+   if (nRet != RTN_OK)
+      return (nRet);
 
    return RTN_OK;
 }

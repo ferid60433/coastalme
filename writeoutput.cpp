@@ -6,7 +6,7 @@
  * \author David Favis-Mortlock
  * \author Andres Payo
  * \author Jim Hall
- * \date 2015
+ * \date 2016
  * \copyright GNU General Public License
  *
  */
@@ -27,10 +27,10 @@
 
 /*==============================================================================================================================
 
- Writes run details to Out and Log files
+ Writes beginning-of-run information to Out and Log files
 
 ==============================================================================================================================*/
-void CSimulation::WriteRunDetails(void)
+void CSimulation::WriteStartRunDetails(void)
 {
    // Set default output format to fixed point
    OutStream << setiosflags(ios::fixed);
@@ -137,6 +137,7 @@ void CSimulation::WriteRunDetails(void)
          OutStream << "Savitzky-Golay";
          break;
    }
+   OutStream << endl;
    OutStream << " Random edge for coastline search?                         \t: " << (m_bRandomCoastEdgeSearch ? "Y": "N") << endl;
    OutStream << endl;
 
@@ -148,7 +149,7 @@ void CSimulation::WriteRunDetails(void)
          OutStream << " Savitzky-Golay coastline smoothing polynomial order       \t: " << m_nSavGolCoastPoly << endl;
    }
    OutStream << " Size of profile slope smoothing window                    \t: " << m_nProfileSmoothWindow << endl;
-   OutStream << " Max local slope on profile (m/m)window                    \t: " << m_dProfileMaxSlope << endl;
+   OutStream << " Max local slope on profile (m/m)                          \t: " << m_dProfileMaxSlope << endl;
    OutStream << endl;
 
 
@@ -273,7 +274,9 @@ void CSimulation::WriteRunDetails(void)
 
    // ---------------------------------------------------- Vector GIS stuff ------------------------------------------------------
    OutStream << "Vector GIS Input Files" << endl;
-   if (! m_strInitialCoastlineFile.empty())
+   if (m_strInitialCoastlineFile.empty())
+      OutStream << " None" << endl;
+   else
    {
       OutStream << " Initial Coastline file                                    \t: " << m_strInitialCoastlineFile << endl;
       OutStream << " OGR Initial Coastline file driver code                    \t: " << m_strOGRICDriverCode << endl;
@@ -311,15 +314,13 @@ void CSimulation::WriteRunDetails(void)
    OutStream << " Planview width of cliff deposition talus                  \t: " << m_nCliffDepositionPlanviewWidth << " cells" << endl;
    OutStream << " Planview length of cliff deposition talus                 \t: " << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << m_dCliffDepositionPlanviewLength << " m" << endl;
    OutStream << " Height of talus at land end (fraction of cliff elevation) \t: " << m_dCliffDepositionHeightFrac << endl;
-   OutStream << endl;
-
    OutStream << " Spacing of coastline normals                              \t: " << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << m_dCoastNormalAvgSpacing << " m" << endl;
    OutStream << " Length of coastline normals                               \t: " << m_dCoastNormalLength << " m" << endl;
    if (m_dCoastNormalRandSpaceFact > 0)
       OutStream << " Random factor for spacing of coastline normals            \t: " << m_dCoastNormalRandSpaceFact << " m" << endl;
    else
       OutStream << " Spacing of coastline normals is deterministic" << endl;
-   OutStream << " Interval for coastline curvature calculations             \t: " << m_dCoastCurvatureInterval << endl;
+   OutStream << " Interval for coastline curvature calculations             \t: " << m_nCoastCurvatureInterval << endl;
    OutStream << endl;
 /*
    OutStream << setiosflags(ios::fixed) << setprecision(8);
@@ -688,6 +689,103 @@ bool CSimulation::bWriteParProfileData(int const nCoast, int const nProfile, int
    OutProfStream.close();
 
    return true;
+}
+
+
+/*==============================================================================================================================
+
+ Writes end-of-run information to Out, Log and time-series files
+
+==============================================================================================================================*/
+int CSimulation::nWriteEndRunDetails(void)
+{
+   // Final write to time series CSV files
+   if (! bWriteTSFiles())
+      return (RTN_ERR_TSFILEWRITE);
+
+   // Save the values from the RasterGrid array into raster GIS files
+   if (! bSaveAllRasterGISFiles())
+      return (RTN_ERR_RASTER_FILE_WRITE);
+
+   // Save the vector GIS files
+   if (! bSaveAllVectorGISFiles())
+      return (RTN_ERR_VECTOR_FILE_WRITE);
+
+   OutStream << " GIS" << m_nGISSave << endl;
+
+   // Print out run totals etc.
+   OutStream << PERITERHEAD1 << endl;
+   OutStream << PERITERHEAD2 << endl;
+   OutStream << PERITERHEAD3 << endl;
+   OutStream << PERITERHEAD4 << endl;
+
+   OutStream << setiosflags(ios::fixed) << setprecision(2);
+   OutStream << endl << endl;
+
+   // Write out hydrology grand totals etc.
+   OutStream << ENDHYDROLOGYHEAD << endl;
+   OutStream << "Minimum still water level = " << m_dMinStillWaterLevel << endl;
+   OutStream << "Maximum still water level = " << m_dMaxStillWaterLevel << endl;
+   OutStream << endl;
+
+   // Now write out sediment movement grand totals etc.
+   OutStream << ENDSEDIMENTHEAD << endl;
+   OutStream << "Total potential erosion = " << m_ldGTotPotentialErosion << endl;
+   OutStream << "Total actual erosion = " << m_ldGTotActualErosion << endl;
+   OutStream << "Total sediment lost from grid = " << m_ldGTotSedLost << endl;
+
+   OutStream << endl;
+
+   OutStream << "Total fine actual erosion = " << m_ldGTotFineActualErosion << endl;
+   OutStream << "Total sand actual erosion = " << m_ldGTotSandActualErosion << endl;
+   OutStream << "Total coarse actual erosion = " << m_ldGTotCoarseActualErosion << endl;
+
+   OutStream << endl;
+
+   OutStream << "Total fine deposition = " << m_ldGTotFineDeposition << endl;
+   OutStream << "Total sand deposition = " << m_ldGTotSandDeposition << endl;
+   OutStream << "Total coarse deposition = " << m_ldGTotCoarseDeposition << endl;
+
+   OutStream << endl;
+
+   OutStream << "Total fine cliff collapse = " << m_ldGTotCliffCollapseFine << endl;
+   OutStream << "Total sand cliff collapse = " << m_ldGTotCliffCollapseSand << endl;
+   OutStream << "Total coarse cliff collapse = " << m_ldGTotCliffCollapseCoarse << endl;
+
+   OutStream << endl;
+
+   OutStream << "Total fine cliff collapse deposition = " << m_ldGTotCliffCollapseFineDeposition << endl;
+   OutStream << "Total sand cliff collapse deposition = " << m_ldGTotCliffCollapseSandDeposition << endl;
+   OutStream << "Total coarse cliff collapse deposition = " << m_ldGTotCliffCollapseCoarseDeposition << endl;
+
+   OutStream << endl << endl;
+
+   // Finally calculate performance details
+   OutStream << PERFORMHEAD << endl;
+   OutStream << "Time simulated: " << strDispSimTime(m_dSimDuration) << endl << endl;
+
+   // Output averages for on-profile and between-profile potential erosion, these should be roughly equal
+   LogStream << setiosflags(ios::fixed);
+   LogStream << endl;
+   LogStream << "On-profile average potential erosion = " << m_dTotPotErosionOnProfiles / m_ulTotPotErosionOnProfiles << " mm (n = " << m_ulTotPotErosionOnProfiles << ")" << endl;
+   LogStream << "Between-profile average potential erosion = " << m_dTotPotErosionBetweenProfiles / m_ulTotPotErosionBetweenProfiles << " mm (n = " << m_ulTotPotErosionBetweenProfiles << ")" << endl;
+   LogStream << endl;
+
+#if ! defined RANDCHECK
+   // Calculate length of run, write in file (note that m_dSimDuration is in hours)
+   CalcTime(m_dSimDuration * 3600);
+#endif
+
+   // Calculate statistics re. memory usage etc.
+   CalcProcessStats();
+   OutStream << endl << "END OF RUN" << endl;
+   LogStream << endl << "END OF RUN" << endl;
+
+   // Need to flush these here (if we don't, the buffer may not get written)
+   LogStream.flush();
+   OutStream.flush();
+
+   return RTN_OK;
 }
 
 
